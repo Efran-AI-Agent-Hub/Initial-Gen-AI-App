@@ -1,4 +1,4 @@
-from http.client import responses
+from typing import Iterator
 
 from langchain_classic.chains.llm import LLMChain
 from langchain_ollama import OllamaLLM
@@ -9,9 +9,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 MODEL = "gemma3:4b"
 URL = "http://localhost:11434"
+STREAM_MODE_OPTIONS = ["messages"]
 
-
-def llm_model(prompt, params):
+def llm_model(prompt: str, params: dict, stream_mode: str | None =None) -> Iterator[str]:
     default_params = {
         "num_predict": 256,  # Ollama's equivalent to max_new_tokens
         "temperature": 0.5,  # Randomness (0.0 = deterministic, 1.0 = creative)
@@ -28,7 +28,11 @@ def llm_model(prompt, params):
         **default_params,
     )
 
-    response = ollama_llm.invoke(prompt)
+    if stream_mode == "messages":
+        response = ollama_llm.stream(prompt)
+    else:
+        response = ollama_llm.invoke(prompt)
+        response = iter({response})
     return response
 
 
@@ -42,9 +46,11 @@ def main():
 
     prompt = "The wind is "
 
-    response = llm_model(prompt, params)
-    print(f"prompt: {prompt}\n")
-    print(f"response : {response}\n")
+    response = llm_model(prompt, params, stream_mode=None)
+    print(f"PROMPT: {prompt}\n")
+    print(f"RESPONSE:")
+    for chunk in response:
+        print(chunk, end="", flush=True)
 
 
 if __name__ == "__main__":
