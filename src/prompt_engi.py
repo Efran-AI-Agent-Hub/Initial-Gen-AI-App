@@ -12,6 +12,7 @@ MODEL = "gemma3:4b"
 URL = "http://localhost:11434"
 STREAM_MODE_OPTIONS = ["messages"]
 
+print_lock = asyncio.Lock()
 
 class UnifiedLLMResponse:
     """
@@ -67,11 +68,13 @@ async def llm_model(prompt: str, params: dict, stream_mode: bool = False):
 
 
 async def process_response(params, prompt, stream_mode: bool = False):
-    print(f"PROMPT: {prompt}")
-    async for chunk in UnifiedLLMResponse(
+    response_obj = UnifiedLLMResponse(
             llm_model(prompt, params, stream_mode=stream_mode), is_streaming=stream_mode
-    ):
-        print(chunk, end="", flush=True)
+    )
+    response = await response_obj.collect()
+    async with print_lock:
+        print(f"PROMPT: {prompt}")
+        print(f"RESPONSE:\n {response}\n")
 
 async def ex1_single(params):
     # single request
