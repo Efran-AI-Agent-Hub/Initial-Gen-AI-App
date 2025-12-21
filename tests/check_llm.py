@@ -24,7 +24,9 @@ async def ex3_concurrent(params):
     # single request streaming
     stream_mode = False
     prompts = ["The wind is ", "what color is the sky?", "whats 2+2?"]
-    tasks = [process_response(params, prompt, stream_mode) for prompt in prompts]
+    print_lock = asyncio.Lock()
+
+    tasks = [process_response(params, prompt, stream_mode,print_lock) for prompt in prompts]
     print("CONCURRENT REQUESTS:")
     responses = await asyncio.gather(*tasks)
     print()
@@ -34,7 +36,9 @@ async def ex4_concurrent_stream(params):
     # single request streaming
     stream_mode = True
     prompts = ["The wind is ", "what color is the sky?", "whats 2+2?"]
-    tasks = [process_response(params, prompt, stream_mode) for prompt in prompts]
+    print_lock = asyncio.Lock()
+
+    tasks = [process_response(params, prompt, stream_mode, print_lock) for prompt in prompts]
     print("CONCURRENT REQUESTS:")
     responses = await asyncio.gather(*tasks)
     print()

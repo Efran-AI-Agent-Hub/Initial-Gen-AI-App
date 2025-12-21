@@ -11,10 +11,6 @@ from langchain_core.messages import HumanMessage, SystemMessage
 MODEL = "gemma3:4b"
 URL = "http://localhost:11434"
 STREAM_MODE_OPTIONS = ["messages"]
-
-print_lock = asyncio.Lock()
-
-
 class UnifiedLLMResponse:
     """
     Wrapper class that provided unified interface for LLM response
@@ -68,66 +64,35 @@ async def llm_model(prompt: str, params: dict, stream_mode: bool = False):
         yield response
 
 
-async def process_response(params, prompt, stream_mode: bool = False):
-    response_obj = UnifiedLLMResponse(
-        llm_model(prompt, params, stream_mode=stream_mode), is_streaming=stream_mode
-    )
-    response = await response_obj.collect()
-    async with print_lock:
+async def process_response(params, prompt, stream_mode: bool = False, print_lock: asyncio.Lock = None):
+    if print_lock:
+        async with print_lock:
+            print(f"PROMPT: {prompt}")
+            print("RESPONSE:")
+            async for chunk in UnifiedLLMResponse(llm_model(prompt, params, stream_mode), stream_mode):
+                print(chunk, end="", flush=True)
+    else:
         print(f"PROMPT: {prompt}")
-        print(f"RESPONSE:\n {response}\n")
+        print("RESPONSE:")
+        async for chunk in UnifiedLLMResponse(llm_model(prompt, params, stream_mode), stream_mode):
+            print(chunk, end="", flush=True)
 
 
-async def ex1_single(params):
-    # single request
-    stream_mode = False
-    prompt = "The wind is "
-    print("SINGLE REQUEST:")
-    await process_response(params, prompt, stream_mode=stream_mode)
-    print()
 
-
-async def ex2_single_stream(params):
-    # single request streaming
-    stream_mode = True
-    prompt = "The wind is "
-    print("SINGLE STREAM REQUEST:")
-    await process_response(params, prompt, stream_mode=stream_mode)
-    print()
-
-
-async def ex3_concurrent(params):
-    # single request streaming
-    stream_mode = False
-    prompts = ["The wind is ", "what color is the sky?", "whats 2+2?"]
-    tasks = [process_response(params, prompt, stream_mode) for prompt in prompts]
-    print("CONCURRENT REQUESTS:")
-    responses = await asyncio.gather(*tasks)
-    print()
-
-
-async def ex4_concurrent_stream(params):
-    # single request streaming
-    stream_mode = True
-    prompts = ["The wind is ", "what color is the sky?", "whats 2+2?"]
-    tasks = [process_response(params, prompt, stream_mode) for prompt in prompts]
-    print("CONCURRENT REQUESTS:")
-    responses = await asyncio.gather(*tasks)
-    print()
-
-
-if __name__ == "__main__":
+async def main ():
     params = {
         "num_predict": 128,
         "temperature": 0.5,
         "top_p": 0.2,
         "top_k": 1,
     }
-    print("=" * 10 + "\n")
-    asyncio.run(ex1_single(params=params))
-    print("=" * 10 + "\n")
-    asyncio.run(ex2_single_stream(params=params))
-    print("=" * 10 + "\n")
-    asyncio.run(ex3_concurrent(params=params))
-    print("=" * 10 + "\n")
-    asyncio.run(ex4_concurrent_stream(params=params))
+
+    stream_mode = True
+    print_lock = asyncio.Lock()
+    prompt = "The wind is "
+
+    await process_response(params, prompt, stream_mode=stream_mode, print_lock=print_lock)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
