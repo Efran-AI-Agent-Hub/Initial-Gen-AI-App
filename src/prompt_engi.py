@@ -73,22 +73,20 @@ async def llm_model(prompt: str, params: dict, stream_mode: bool = False):
 async def process_response(
     params, prompt, stream_mode: bool = False, print_lock: asyncio.Lock = None
 ):
+    chunks = []
+    async for chunk in UnifiedLLMResponse(llm_model(prompt, params, stream_mode), stream_mode):
+        chunks.append(chunk)
+    full_response = "".join(chunks)
+
+
     if print_lock:
         async with print_lock:
             print(f"PROMPT: {prompt}")
-            print("RESPONSE:")
-            async for chunk in UnifiedLLMResponse(
-                llm_model(prompt, params, stream_mode), stream_mode
-            ):
-                print(chunk, end="", flush=True)
+            print(f"RESPONSE: {full_response}")
             print("\n" + ("-" * 10) + "LLM RESPONSE COMPLETE", flush=True)
     else:
         print(f"PROMPT: {prompt}")
-        print("RESPONSE:")
-        async for chunk in UnifiedLLMResponse(
-            llm_model(prompt, params, stream_mode), stream_mode
-        ):
-            print(chunk, end="", flush=True)
+        print(f"RESPONSE: {full_response}")
         print("\n" + ("-" * 10) + "LLM RESPONSE COMPLETE", flush=True)
 
 
