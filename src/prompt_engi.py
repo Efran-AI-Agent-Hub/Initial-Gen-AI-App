@@ -11,6 +11,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 MODEL = "gemma3:4b"
 URL = "http://localhost:11434"
 STREAM_MODE_OPTIONS = ["messages"]
+
+
 class UnifiedLLMResponse:
     """
     Wrapper class that provided unified interface for LLM response
@@ -64,22 +66,29 @@ async def llm_model(prompt: str, params: dict, stream_mode: bool = False):
         yield response
 
 
-async def process_response(params, prompt, stream_mode: bool = False, print_lock: asyncio.Lock = None):
+async def process_response(
+    params, prompt, stream_mode: bool = False, print_lock: asyncio.Lock = None
+):
     if print_lock:
         async with print_lock:
             print(f"PROMPT: {prompt}")
             print("RESPONSE:")
-            async for chunk in UnifiedLLMResponse(llm_model(prompt, params, stream_mode), stream_mode):
+            async for chunk in UnifiedLLMResponse(
+                llm_model(prompt, params, stream_mode), stream_mode
+            ):
                 print(chunk, end="", flush=True)
+            print("\n" + ("-" * 10) + "LLM RESPONSE COMPLETE", flush=True)
     else:
         print(f"PROMPT: {prompt}")
         print("RESPONSE:")
-        async for chunk in UnifiedLLMResponse(llm_model(prompt, params, stream_mode), stream_mode):
+        async for chunk in UnifiedLLMResponse(
+            llm_model(prompt, params, stream_mode), stream_mode
+        ):
             print(chunk, end="", flush=True)
+        print("\n" + ("-" * 10) + "LLM RESPONSE COMPLETE", flush=True)
 
 
-
-async def main ():
+async def basic_prompts():
     params = {
         "num_predict": 128,
         "temperature": 0.5,
@@ -89,10 +98,18 @@ async def main ():
 
     stream_mode = True
     print_lock = asyncio.Lock()
-    prompt = "The wind is "
+    prompts = [
+        "The future of artificial intelligence is",
+        "Once upon a time in a distant galaxy",
+        "The benefits of sustainable energy include",
+    ]
 
-    await process_response(params, prompt, stream_mode=stream_mode, print_lock=print_lock)
+    tasks = [
+        process_response(params, prompt, stream_mode=stream_mode, print_lock=print_lock)
+        for prompt in prompts
+    ]
+    await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(basic_prompts())
