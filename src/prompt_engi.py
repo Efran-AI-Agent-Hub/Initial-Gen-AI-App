@@ -5,7 +5,11 @@ from langchain_classic.chains.llm import LLMChain
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough, RunnableSequence
+from langchain_core.runnables import (
+    RunnablePassthrough,
+    RunnableSequence,
+    RunnableLambda,
+)
 from langchain_core.messages import HumanMessage, SystemMessage
 
 MODEL = "gemma3:4b"
@@ -111,5 +115,36 @@ async def basic_prompts():
     await asyncio.gather(*tasks)
 
 
+def format_prompt(variables):
+    # return prompt.format(**variables)
+    prompt = variables["prompt"]
+    return [prompt.format(**variables)]
+
+
+def basic_prompt_template():
+    joke_template = """Tell me a {adjective} joke about {content}"""
+    prompt_template = PromptTemplate.from_template(joke_template)
+    params = {
+        "num_predict": 128,
+        "temperature": 0.5,
+        "top_p": 0.2,
+        "top_k": 1,
+    }
+
+    ollama_llm = OllamaLLM(
+        model=MODEL,
+        base_url=URL,
+        **params,
+    )
+
+    joke_chain = RunnableLambda(format_prompt) | ollama_llm | StrOutputParser()
+
+    response = joke_chain.invoke(
+        {"prompt": prompt_template, "adjective": "sad", "content": "fish"}
+    )
+    print(response)
+
+
 if __name__ == "__main__":
-    asyncio.run(basic_prompts())
+    # asyncio.run(basic_prompts())
+    basic_prompt_template()
