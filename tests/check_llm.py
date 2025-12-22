@@ -1,4 +1,5 @@
 from typing import List
+from time import perf_counter
 
 import asyncio
 from src.prompt_engi import process_response
@@ -178,4 +179,7 @@ def check_output_prompts():
 
 if __name__ == "__main__":
     # check_output_stream()
+    start = perf_counter()
     check_output_prompts()
+    end = perf_counter()
+    print(f"Elapsed time: {end - start} seconds")
