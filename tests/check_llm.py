@@ -1,61 +1,75 @@
+from typing import List
+
 import asyncio
 from src.prompt_engi import process_response
 
+class LLMStreamTester:
+    def __init__(self, params):
+        self.params = params
 
-async def ex1_single(params):
-    # single request
-    stream_mode = False
-    prompt = "The wind is "
-    print("SINGLE REQUEST:")
-    await process_response(params, prompt, stream_mode=stream_mode)
-    print()
-
-
-async def ex2_single_stream(params):
-    # single request streaming
-    stream_mode = True
-    prompt = "The wind is "
-    print("SINGLE STREAM REQUEST:")
-    await process_response(params, prompt, stream_mode=stream_mode)
-    print()
+    async def execute_prompt(self, prompts: List[str], msg = None, stream_mode = False):
+        if msg:
+            print(msg)
+        if len(prompts) == 1:
+            await process_response(self.params, prompts[0], stream_mode=stream_mode)
+        else:
+            print_lock = asyncio.Lock()
+            tasks = [process_response(self.params, prompt, stream_mode, print_lock) for prompt in prompts]
+            print("CONCURRENT REQUESTS:")
+            await asyncio.gather(*tasks)
 
 
-async def ex3_concurrent(params):
-    # single request streaming
-    stream_mode = False
-    prompts = ["The wind is ", "what color is the sky?", "whats 2+2?"]
-    print_lock = asyncio.Lock()
 
-    tasks = [process_response(params, prompt, stream_mode,print_lock) for prompt in prompts]
-    print("CONCURRENT REQUESTS:")
-    responses = await asyncio.gather(*tasks)
-    print()
-
-
-async def ex4_concurrent_stream(params):
-    # single request streaming
-    stream_mode = True
-    prompts = ["The wind is ", "what color is the sky?", "whats 2+2?"]
-    print_lock = asyncio.Lock()
-
-    tasks = [process_response(params, prompt, stream_mode, print_lock) for prompt in prompts]
-    print("CONCURRENT REQUESTS:")
-    responses = await asyncio.gather(*tasks)
-    print()
-
-
-if __name__ == "__main__":
+def check_output_stream():
     params = {
         "num_predict": 128,
         "temperature": 0.5,
         "top_p": 0.2,
         "top_k": 1,
     }
+
+    llm_tester = LLMStreamTester(params)
+    prompts = ["The wind is "]
+    msg = "SINGLE REQUEST:"
+    stream_mode = False
+    # asyncio.run(llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode))
+
+    prompts = ["The wind is "]
+    msg = "SINGLE STREAM REQUEST:"
+    stream_mode = True
+    asyncio.run(llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode))
+
+    prompts = ["The wind is ", "what color is the sky?", "whats 2+2?"]
+    msg = "CONCURRENT REQUESTS:"
+    stream_mode = False
+#     asyncio.run(llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode))
+
+    prompts = ["The wind is ", "what color is the sky?", "whats 2+2?"]
+    msg = "CONCURRENT REQUESTS:"
+    stream_mode = True
+    asyncio.run(llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode))
+
+def check__output_prompts():
+    params = {
+        "num_predict": 128,
+        "temperature": 0.5,
+        "top_p": 0.2,
+        "top_k": 1,
+    }
+
+    llm_tester = LLMStreamTester(params)
+
     print("=" * 10 + "\n")
-    asyncio.run(ex1_single(params=params))
-    print("=" * 10 + "\n")
-    asyncio.run(ex2_single_stream(params=params))
-    print("=" * 10 + "\n")
-    asyncio.run(ex3_concurrent(params=params))
-    print("=" * 10 + "\n")
-    asyncio.run(ex4_concurrent_stream(params=params))
+    prompts = [
+            "The future of artificial intelligence is",
+            "Once upon a time in a distant galaxy",
+            "The benefits of sustainable energy include"
+        ]
+    msg = "BASIC PROMPTS:"
+    stream_mode = True
+    asyncio.run(llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode))
+
+
+if __name__ == "__main__":
+    # check_output_stream()
+    check__output_prompts()
