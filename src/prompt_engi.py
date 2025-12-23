@@ -1,5 +1,6 @@
-from typing import Iterator, AsyncIterator
+from typing import Iterator, AsyncIterator, Dict, List
 import asyncio
+from time import perf_counter
 
 from langchain_classic.chains.llm import LLMChain
 from langchain_ollama import OllamaLLM
@@ -14,6 +15,12 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 MODEL = "gemma3:4b"
 URL = "http://localhost:11434"
+DEFAULT_PARAMS = {
+        "num_predict": 128,
+        "temperature": 0.5,
+        "top_p": 0.2,
+        "top_k": 1,
+    }
 STREAM_MODE_OPTIONS = ["messages"]
 
 
@@ -90,44 +97,8 @@ async def process_response(
         print("\n" + ("-" * 10) + "LLM RESPONSE COMPLETE", flush=True)
 
 
-async def basic_prompts():
-    params = {
-        "num_predict": 128,
-        "temperature": 0.5,
-        "top_p": 0.2,
-        "top_k": 1,
-    }
-
-    stream_mode = True
-    print_lock = asyncio.Lock()
-    prompts = [
-        "The future of artificial intelligence is",
-        "Once upon a time in a distant galaxy",
-        "The benefits of sustainable energy include",
-    ]
-
-    tasks = [
-        process_response(params, prompt, stream_mode=stream_mode, print_lock=print_lock)
-        for prompt in prompts
-    ]
-    await asyncio.gather(*tasks)
-
-
-def format_prompt(variables):
-    # return prompt.format(**variables)
-    prompt = variables["prompt"]
-    return [prompt.format(**variables)]
-
-
-def basic_prompt_template():
-    joke_template = """Tell me a {adjective} joke about {content}"""
-    prompt_template = PromptTemplate.from_template(joke_template)
-    params = {
-        "num_predict": 128,
-        "temperature": 0.5,
-        "top_p": 0.2,
-        "top_k": 1,
-    }
+async def process_prompt_template(template_str:str, input_list: List[Dict[str, str]], params: Dict[str, float], stream_mode: bool = False, concurrent: bool = False):
+    prompt_template = PromptTemplate.from_template(template_str)
 
     ollama_llm = OllamaLLM(
         model=MODEL,
@@ -135,14 +106,32 @@ def basic_prompt_template():
         **params,
     )
 
-    joke_chain = RunnableLambda(format_prompt) | ollama_llm | StrOutputParser()
+    chain = prompt_template | ollama_llm | StrOutputParser()
 
-    response = joke_chain.invoke(
-        {"prompt": prompt_template, "adjective": "sad", "content": "fish"}
-    )
-    print(response)
+    if concurrent:
+        results = await chain.abatch(input_list)
+    else:
+        results = []
+        for input in input_list:
+            results.append(chain.invoke(input))
+
+    for prompt, resp in zip(input_list, results):
+        print("PROMPT:", prompt)
+        print("RESPONSE:", resp)
+
+
 
 
 if __name__ == "__main__":
+    start = perf_counter()
     # asyncio.run(basic_prompts())
-    basic_prompt_template()
+    # basic_prompt_template()
+
+    template_str = "tell me a joke about {thing}"
+    animals = ["cat", "dog", "horse", "sheep", "cow", "fox", "rabbit", "giraffe", "monkey", "ox", "snail"]
+    input_list = [{"thing": animals[x]} for x in range(10)]
+
+    asyncio.run(process_prompt_template(template_str, input_list, params=DEFAULT_PARAMS, concurrent=True))
+
+    end = perf_counter()
+    print(f"Elapsed time: {end - start} seconds")
