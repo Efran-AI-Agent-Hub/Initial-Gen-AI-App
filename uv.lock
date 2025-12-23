@@ -12,6 +12,8 @@ dependencies = [
     { name = "langchain-core" },
     { name = "langchain-ollama" },
     { name = "ollama" },
+    { name = "python-dotenv" },
+    { name = "pyyaml" },
     { name = "ruff" },
 ]
 
@@ -22,6 +24,8 @@ requires-dist = [
     { name = "langchain-core", specifier = ">=1.2.4" },
     { name = "langchain-ollama", specifier = ">=1.0.1" },
     { name = "ollama", specifier = ">=0.6.1" },
+    { name = "python-dotenv", specifier = ">=1.2.1" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "ruff", specifier = ">=0.14.10" },
 ]
 
