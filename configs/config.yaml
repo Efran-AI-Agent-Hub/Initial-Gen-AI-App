@@ -1,0 +1,9 @@
+ollama_config:
+  model: gemma3:4b
+  url: http://localhost:11434
+model_params:
+  num_predict: 128 # Ollama's equivalent to max_new_tokens
+  temperature: 0.5 # Randomness (0.0 = deterministic, 1.0 = creative)
+  top_p: 0.2 # Nucleus sampling
+  top_k: 1 # Top-k sampling
+
