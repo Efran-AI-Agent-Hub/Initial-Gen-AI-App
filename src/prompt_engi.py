@@ -51,10 +51,11 @@ async def process_response(
     llm: OllamaLLM, prompt, stream_mode: bool = False, print_lock: asyncio.Lock = None
 ):
     chunks = []
-    async for chunk in UnifiedLLMResponse(llm_model_response(llm, prompt, stream_mode), stream_mode):
+    async for chunk in UnifiedLLMResponse(
+        llm_model_response(llm, prompt, stream_mode), stream_mode
+    ):
         chunks.append(chunk)
     full_response = "".join(chunks)
-
 
     if print_lock:
         async with print_lock:
@@ -67,7 +68,12 @@ async def process_response(
         print("\n" + ("-" * 10) + "LLM RESPONSE COMPLETE", flush=True)
 
 
-async def process_prompt_template(llm: OllamaLLM, template_str:str, input_list: List[Dict[str, str]], concurrent: bool = False):
+async def process_prompt_template(
+    llm: OllamaLLM,
+    template_str: str,
+    input_list: List[Dict[str, str]],
+    concurrent: bool = False,
+):
     prompt_template = PromptTemplate.from_template(template_str)
     chain = prompt_template | llm | StrOutputParser()
 
@@ -81,8 +87,6 @@ async def process_prompt_template(llm: OllamaLLM, template_str:str, input_list: 
     for prompt, resp in zip(input_list, results):
         print("PROMPT:", prompt_template.invoke(prompt))
         print("RESPONSE:", resp)
-
-
 
 
 if __name__ == "__main__":

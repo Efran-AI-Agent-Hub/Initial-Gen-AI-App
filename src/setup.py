@@ -13,16 +13,13 @@ def get_llm(config_location="configs/config.yaml") -> OllamaLLM:
     llm_model = OllamaLLM(
         model=config["ollama_config"]["model"],
         base_url=config["ollama_config"]["url"],
-        **config["model_params"]
+        **config["model_params"],
     )
 
     return llm_model
 
 
-
 if __name__ == "__main__":
-
-
     model = get_llm()
 
     result = model.invoke("what day is today?")

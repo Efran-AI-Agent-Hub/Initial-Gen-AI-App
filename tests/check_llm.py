@@ -154,19 +154,23 @@ async def check_output_prompts():
 async def check_output_templates():
     llm = get_llm()
 
-    #? Text Summarization
+    # ? Text Summarization
     template_str = "Summarize the {content} in one sentence."
-    input_list = [{"content": """
+    input_list = [
+        {
+            "content": """
         The rapid advancement of technology in the 21st century has transformed various industries, including healthcare, education, and transportation. 
         Innovations such as artificial intelligence, machine learning, and the Internet of Things have revolutionized how we approach everyday tasks and complex problems. 
         For instance, AI-powered diagnostic tools are improving the accuracy and speed of medical diagnoses, while smart transportation systems are making cities more efficient and reducing traffic congestion. 
         Moreover, online learning platforms are making education more accessible to people around the world, breaking down geographical and financial barriers. 
         These technological developments are not only enhancing productivity but also contributing to a more interconnected and informed society.
-    """}]
+    """
+        }
+    ]
 
     await process_prompt_template(llm, template_str, input_list, concurrent=True)
 
-    #? Quick Answer
+    # ? Quick Answer
 
     template_str = """
     Answer the {question} based on the {content}.
@@ -175,17 +179,20 @@ async def check_output_templates():
     Answer:
     """
 
-    input_list = [{
-        "question": "Which planets in the solar system are rocky and solid?",
-        "content": """
+    input_list = [
+        {
+            "question": "Which planets in the solar system are rocky and solid?",
+            "content": """
             The solar system consists of the Sun, eight planets, their moons, dwarf planets, and smaller objects like asteroids and comets. 
             The inner planets—Mercury, Venus, Earth, and Mars—are rocky and solid. 
             The outer planets—Jupiter, Saturn, Uranus, and Neptune—are much larger and gaseous.
-        """}]
+        """,
+        }
+    ]
 
     await process_prompt_template(llm, template_str, input_list, concurrent=True)
 
-    #? Code Generation
+    # ? Code Generation
     llm = get_llm()
     template_str = """
    Generate an SQL query based on the {description}
@@ -194,13 +201,17 @@ async def check_output_templates():
     
     """
 
-    input_list = [{
-        "description": """
+    input_list = [
+        {
+            "description": """
             Retrieve the names and email addresses of all customers from the 'customers' table who have made a purchase in the last 30 days. 
             The table 'purchases' contains a column 'purchase_date'
-        """}]
+        """
+        }
+    ]
 
     await process_prompt_template(llm, template_str, input_list, concurrent=True)
+
 
 if __name__ == "__main__":
     start = perf_counter()
