@@ -2,7 +2,7 @@ from typing import List
 from time import perf_counter
 
 import asyncio
-from src.prompt_engi import process_response
+from src.prompt_engi import process_response, process_prompt_template
 
 
 class LLMStreamTester:
@@ -177,9 +177,64 @@ def check_output_prompts():
     )
 
 
+def check_output_templates():
+    params = {
+        "num_predict": 128,
+        "temperature": 0.5,
+        "top_p": 0.2,
+        "top_k": 1,
+    }
+
+    #? Text Summarization
+    template_str = "Summarize the {content} in one sentence."
+    input_list = [{"content": """
+        The rapid advancement of technology in the 21st century has transformed various industries, including healthcare, education, and transportation. 
+        Innovations such as artificial intelligence, machine learning, and the Internet of Things have revolutionized how we approach everyday tasks and complex problems. 
+        For instance, AI-powered diagnostic tools are improving the accuracy and speed of medical diagnoses, while smart transportation systems are making cities more efficient and reducing traffic congestion. 
+        Moreover, online learning platforms are making education more accessible to people around the world, breaking down geographical and financial barriers. 
+        These technological developments are not only enhancing productivity but also contributing to a more interconnected and informed society.
+    """}]
+
+    asyncio.run(process_prompt_template(template_str, input_list, params=params, concurrent=True))
+
+    #? Quick Answer
+    template_str = """
+    Answer the {question} based on the {content}.
+    Respond "Unsure about answer" if not sure about the answer.
+    
+    Answer:
+    """
+
+    input_list = [{
+        "question": "Which planets in the solar system are rocky and solid?",
+        "content": """
+            The solar system consists of the Sun, eight planets, their moons, dwarf planets, and smaller objects like asteroids and comets. 
+            The inner planets—Mercury, Venus, Earth, and Mars—are rocky and solid. 
+            The outer planets—Jupiter, Saturn, Uranus, and Neptune—are much larger and gaseous.
+        """}]
+
+    asyncio.run(process_prompt_template(template_str, input_list, params=params, concurrent=True))
+
+    #? Code Generation
+    template_str = """
+   Generate an SQL query based on the {description}
+    
+    SQL Query:
+    
+    """
+
+    input_list = [{
+        "description": """
+            Retrieve the names and email addresses of all customers from the 'customers' table who have made a purchase in the last 30 days. 
+            The table 'purchases' contains a column 'purchase_date'
+        """}]
+
+    asyncio.run(process_prompt_template(template_str, input_list, params=params, concurrent=True))
+
 if __name__ == "__main__":
-    # check_output_stream()
     start = perf_counter()
-    check_output_prompts()
+    # check_output_stream()
+    # check_output_prompts()
+    check_output_templates()
     end = perf_counter()
     print(f"Elapsed time: {end - start} seconds")

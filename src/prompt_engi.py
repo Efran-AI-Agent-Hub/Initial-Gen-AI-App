@@ -116,7 +116,7 @@ async def process_prompt_template(template_str:str, input_list: List[Dict[str, s
             results.append(chain.invoke(input))
 
     for prompt, resp in zip(input_list, results):
-        print("PROMPT:", prompt)
+        print("PROMPT:", prompt_template.invoke(prompt))
         print("RESPONSE:", resp)
 
 
@@ -124,14 +124,5 @@ async def process_prompt_template(template_str:str, input_list: List[Dict[str, s
 
 if __name__ == "__main__":
     start = perf_counter()
-    # asyncio.run(basic_prompts())
-    # basic_prompt_template()
-
-    template_str = "tell me a joke about {thing}"
-    animals = ["cat", "dog", "horse", "sheep", "cow", "fox", "rabbit", "giraffe", "monkey", "ox", "snail"]
-    input_list = [{"thing": animals[x]} for x in range(10)]
-
-    asyncio.run(process_prompt_template(template_str, input_list, params=DEFAULT_PARAMS, concurrent=True))
-
     end = perf_counter()
     print(f"Elapsed time: {end - start} seconds")
