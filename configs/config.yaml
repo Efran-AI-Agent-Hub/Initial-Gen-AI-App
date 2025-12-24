@@ -1,9 +1,10 @@
 ollama_config:
-  model: gemma3:4b
+  llm_model: gemma3:4b
+  embedding_model: nomic-embed-text
   url: http://localhost:11434
-model_params:
+model_params: # Ollama Param Info: https://github.com/ollama/ollama/blob/main/docs/api.md
   num_predict: 128 # Ollama's equivalent to max_new_tokens
-  temperature: 0.5 # Randomness (0.0 = deterministic, 1.0 = creative)
+  temperature: 0.0 # Randomness (0.0 = deterministic, 1.0 = creative)
   top_p: 0.2 # Nucleus sampling
-  top_k: 1 # Top-k sampling
+  top_k: 5 # Top k sampling
 
