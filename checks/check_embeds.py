@@ -4,12 +4,18 @@ from langchain_classic.chains.constitutional_ai.prompts import revision_example
 from langchain_classic.chains.retrieval_qa.base import RetrievalQA
 
 from langchain_classic.retrievers import ParentDocumentRetriever
+
 # WebBaseLoader USER_AGENT environment variable not set
 from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableSequence, RunnablePassthrough
 from langchain_core.stores import InMemoryStore
 from langchain_ollama import OllamaLLM, OllamaEmbeddings
-from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
+from langchain_text_splitters import (
+    CharacterTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 from langchain_chroma import Chroma
 
 from setup import get_embed, get_llm
@@ -33,7 +39,7 @@ def check_embedding(
     embedding_model = get_embed()
     embedding_result = embedding_model.embed_documents(texts)
 
-    #? Trying Vector Store
+    # ? Trying Vector Store
     docsearch = Chroma.from_documents(chunks, embedding_model)
 
     query = "What is the issue of mental health?"
@@ -42,22 +48,26 @@ def check_embedding(
     for doc in docs:
         print(doc)
 
-    print("="*10)
+    print("=" * 10)
     retriever = docsearch.as_retriever()
 
     # ? Trying Retrievers
     docs = retriever.invoke("Mental Health")
     for doc in docs:
         print(doc)
-    print("="*10)
+    print("=" * 10)
 
-    #? Parent Document Retriever
+    # ? Parent Document Retriever
     # Strikes balance by splitting and storing small chunks of data. During retrieval, this retriever first fetches the small chunks, but then looks up the parent IDs for the data and returns those larger documents.
     # This is used to split documents into larger, more contextually complete sections
-    parent_splitter = CharacterTextSplitter(chunk_size=2000, chunk_overlap=20, separator="\n")
+    parent_splitter = CharacterTextSplitter(
+        chunk_size=2000, chunk_overlap=20, separator="\n"
+    )
 
     # This is used to split the parent chunks into smaller pieces for more precise retrieval
-    child_splitter = CharacterTextSplitter(chunk_size=400, chunk_overlap=20, separator='\n')
+    child_splitter = CharacterTextSplitter(
+        chunk_size=400, chunk_overlap=20, separator="\n"
+    )
 
     vectorstore = Chroma(
         collection_name="split_parents", embedding_function=embedding_model
@@ -89,8 +99,8 @@ def check_embedding(
     print("== Top sub doc:", sub_docs[0].page_content)
     retrieved_docs = retriever.invoke(query)
     print("== Top main doc:", retrieved_docs[0].page_content)
-    print("="*10)
-    #? QA Retrieval
+    print("=" * 10)
+    # ? QA Retrieval
     llm = get_llm()
 
     qa = RetrievalQA.from_chain_type(
@@ -98,66 +108,64 @@ def check_embedding(
         # The chain type "stuff" means all retrieved documents are simply concatenated and passed to the LLM
         chain_type="stuff",
         retriever=docsearch.as_retriever(),
-        return_source_documents=False
+        return_source_documents=False,
     )
 
     query = "what is this paper discussing?"
     resp = qa.invoke(query)
     print(resp)
 
+
 def format_docs(docs):
+    """Helper to format retrieved documents."""
     return "\n\n".join(doc.page_content for doc in docs)
+
 
 def simple_retrieval_system(simple=True):
     # Load doc and split into chunks for RAG
     loader = WebBaseLoader("https://python.langchain.com/v0.2/docs/introduction/")
 
-    # loader = PyPDFLoader("https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/96-FDF8f7coh0ooim7NyEQ/langchain-paper.pdf")
+    loader = PyPDFLoader(
+        "https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/96-FDF8f7coh0ooim7NyEQ/langchain-paper.pdf"
+    )
     document = loader.load()
 
-
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=20, separator=["\n\n", "\n", ". ", " ", ""] )
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=2000, chunk_overlap=20, separators=["\n\n", "\n", ". ", " ", ""]
+    )
     chunks = text_splitter.split_documents(document)
 
     # Embed doc into vector and store in RAG
     embedding_model: OllamaEmbeddings = get_embed()
-    vector_store = Chroma.from_documents(chunks, embedding_model)
-    retriever = vector_store.as_retriever(search_kwargs={"k": 4})
+    vector_store = Chroma.from_documents(
+        chunks, embedding_model, collection_name="langchain_docs"
+    )
+    retriever = vector_store.as_retriever(
+        search_type="similarity", search_kwargs={"k": 4}
+    )
 
-    template = """Answer the question based only on the following context:
+    llm = get_llm()
+
+    template = """Answer the question based only on the following context. If you cannot answer the question based on the context say so.
     Context: {context}
     Question: {question}
+    Answer: 
     """
 
-    prompt = ChatPromptTemplate(template)
-
-    print("=" * 10)
-    if simple:
-        # Create and run simple retriever
-        respo = retriever.invoke("Mental Health")
-        for re in respo:
-            print(re.page_content)
-            print("-"*10)
-    else:
-        # Create and run QA retriever
-        llm: OllamaLLM = get_llm()
-
-        qa_retriever = RetrievalQA.from_chain_type(
-            llm=llm,
-            # # The chain type "stuff" means all retrieved documents are simply concatenated and passed to the LLM
-            # chain_type="stuff",
-            retriever=vector_store.as_retriever(),
-            return_source_documents=False
-        )
-
-        query = "what is this document discussing?"
-
-        resp = qa_retriever.invoke(query)
-        print(resp)
+    prompt = ChatPromptTemplate.from_template(template)
 
 
+    rag_chain = (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()} # context: invokes retriever for input then passes through to format_docs for formatting RAG results, question: just passes input along
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
 
-
+    # Invoke the chain
+    query = "what is this document discussing?"
+    response = rag_chain.invoke(query)
+    print(response)
 
 
 if __name__ == "__main__":

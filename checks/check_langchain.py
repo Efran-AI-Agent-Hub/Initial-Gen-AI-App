@@ -3,12 +3,19 @@ from src.setup import get_llm
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    PromptTemplate,
+)
 
 from langchain_community.document_loaders import PyPDFLoader
 
+
 class SimpleOutput(BaseModel):
-    prompt: str = Field(description="Provide a summary of the original prompt before answering")
+    prompt: str = Field(
+        description="Provide a summary of the original prompt before answering"
+    )
     response: str = Field(description="End your response with the symbol 'Q _ Q' ")
 
 
@@ -20,18 +27,19 @@ def chat_msg():
             # SystemMessage(content="You are a sassy person that only gives wrong and unhelpful answers"),
             HumanMessage(content="I like high-intensity workouts, what should I do?"),
             AIMessage(content="You should try a CrossFit class"),
-            HumanMessage(content="How often should I attend?")
+            HumanMessage(content="How often should I attend?"),
         ]
     )
     print(msg)
 
+
 def chat_msg_with_template():
     llm = get_llm()
-    #? Chat Prompt Templates
+    # ? Chat Prompt Templates
     prompt = ChatPromptTemplate(
         [
             ("system", "You are an unhelpful person"),
-            ("user", "Tell me a joke about {topic}")
+            ("user", "Tell me a joke about {topic}"),
         ]
     )
 
@@ -42,29 +50,30 @@ def chat_msg_with_template():
     print("=" * 10)
 
     # ? Chat Message Placeholders
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a unhelpful assistant"),
-        MessagesPlaceholder("msgs")
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", "You are a unhelpful assistant"), MessagesPlaceholder("msgs")]
+    )
 
-    inputs = {"msgs": [
-        HumanMessage(content="What is the day after Tuesday?"),
-        HumanMessage(content="What is 2 plus 2"),
-        HumanMessage(content="Does a cat or dog bark?"),
-    ]}
+    inputs = {
+        "msgs": [
+            HumanMessage(content="What is the day after Tuesday?"),
+            HumanMessage(content="What is 2 plus 2"),
+            HumanMessage(content="Does a cat or dog bark?"),
+        ]
+    }
     chain = prompt | llm
     resp = chain.invoke(inputs)
     print(resp)
     print("=" * 10)
 
-    #? Output Parser
+    # ? Output Parser
     output_parser = JsonOutputParser(pydantic_object=SimpleOutput)
     format_instructions = output_parser.get_format_instructions()
 
     prompt = PromptTemplate(
         template="Answer the user query.\n{format_instructions}\n{query}\n",
         input_variables=["query"],
-        partial_variables={"format_instructions": format_instructions}
+        partial_variables={"format_instructions": format_instructions},
     )
 
     inputs = {"query": "Tell me a joke about a dog"}
@@ -78,11 +87,12 @@ def chat_msg_with_template():
     # Can also split inserted text
     prompt = PromptTemplate(
         template="Summarize the provided document. Also Add Random Emojis across the response.\n{doc}",
-        input_variables=["doc"]
+        input_variables=["doc"],
     )
 
     loader = PyPDFLoader(
-        "https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/96-FDF8f7coh0ooim7NyEQ/langchain-paper.pdf")
+        "https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/96-FDF8f7coh0ooim7NyEQ/langchain-paper.pdf"
+    )
     document = loader.load()
     # text_splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=20, separator="\n")
     chain = prompt | llm
@@ -96,4 +106,3 @@ if __name__ == "__main__":
     chat_msg_with_template()
 
     print("done")
-

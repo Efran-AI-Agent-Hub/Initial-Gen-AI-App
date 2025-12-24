@@ -1,6 +1,7 @@
 import yaml
 from langchain_ollama import OllamaLLM, OllamaEmbeddings
 
+
 def get_llm(config_location="configs/config.yaml") -> OllamaLLM:
     with open(config_location) as stream:
         try:
@@ -14,6 +15,7 @@ def get_llm(config_location="configs/config.yaml") -> OllamaLLM:
         **config["model_params"],
     )
     return llm_model
+
 
 def get_embed(config_location="configs/config.yaml"):
     with open(config_location) as stream:
