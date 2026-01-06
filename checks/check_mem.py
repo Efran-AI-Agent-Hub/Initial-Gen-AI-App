@@ -9,6 +9,7 @@ from typing import Any
 
 from setup import get_llm
 
+from functools import partial
 
 def simple_chat():
     llm = get_llm()
@@ -44,6 +45,7 @@ def simple_chat():
 
     print(resp)
 
+
 def simulate_convo(chain: RunnableSerializable[Any, str], history: InMemoryChatMessageHistory, chat_input):
     for question in chat_input:
         resp = chain.invoke(question)
@@ -51,42 +53,51 @@ def simulate_convo(chain: RunnableSerializable[Any, str], history: InMemoryChatM
         history.add_user_message(question)
         history.add_ai_message(resp)
         print("HISTORY\n:", history.messages)
-
+def get_session_history(store, session_id: str):
+    if session_id not in store:
+        history = InMemoryChatMessageHistory()
+        history.add_ai_message("Hello, I am a super helpful AI named Bob")
+        history.add_user_message("Hello Bob, my name is Steve and I'm from Texas")
+        store[session_id] = history
+    return store[session_id]
 
 
 def conv_with_mem():
+    session_store = {}
     llm = get_llm()
-
-    history = InMemoryChatMessageHistory()
-    history.add_ai_message("Hello, I am a super helpful AI named Bob")
-    history.add_user_message("Hello Bob, my name is Steve and I'm from Texas")
-
-    print("Current Convo History:", history.messages)
-
     prompt = ChatPromptTemplate.from_messages([
         ("system",
          """You are a helpful assistant. Answer the user's question based on the following history: in the format
          == Your Question is: {question}
          ++ My Answer is: [You answer goes here]
          """),
-        MessagesPlaceholder(variable_name="chat_history"),
+        MessagesPlaceholder(variable_name="history"),
         ("human", "{question}")
     ])
 
-    chat_chain = (
-        {"chat_history": lambda x : history.messages, "question": RunnablePassthrough()}
-        | prompt
-        | llm
-        | StrOutputParser()
+    chain = prompt | llm | StrOutputParser()
+
+    history_factory = partial(get_session_history, session_store)
+
+    chain_with_history = RunnableWithMessageHistory(
+        chain,
+        history_factory,
+        input_messages_key="question",
+        history_messages_key="history"
     )
 
+    config = {"configurable": {"session_id": "steve_from_texas"}}
 
     chat_input_list = ["What was your name again?",
                        "My favorite sport is Baseball, what is yours?",
                        "How many states are in the US? Also, what is my and your name?",
                        "What's my favorite sport again? What's your favorite sport"]
 
-    simulate_convo(chat_chain, history, chat_input_list)
+
+
+    for question in chat_input_list:
+        resp = chain_with_history.invoke({"question": question}, config=config)
+        print(f"RESPONSE:\n{resp}\n")
 
 
 if __name__ == "__main__":
