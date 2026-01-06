@@ -66,6 +66,7 @@ def conv_with_mem():
     session_store = {}
     llm = get_llm()
     prompt = ChatPromptTemplate.from_messages([
+        #! Warning: Using a custom format for LLM response. Make sure custom format doesn't confuse LLM response since it's being appended to history
         ("system",
          """You are a helpful assistant. Answer the user's question based on the following history: in the format
          == Your Question is: {question}
