@@ -1,3 +1,5 @@
+# Simple python script testing langchain chat feature
+
 from src.setup import get_llm
 
 from langchain_core.output_parsers import JsonOutputParser
@@ -102,7 +104,7 @@ def chat_msg_with_template():
 
 
 if __name__ == "__main__":
-    # chat_msg()
+    chat_msg()
     chat_msg_with_template()
 
     print("done")

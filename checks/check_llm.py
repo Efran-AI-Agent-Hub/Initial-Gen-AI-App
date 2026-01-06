@@ -1,3 +1,5 @@
+# Simple python script testing asking questions to LLM
+
 from typing import List
 from time import perf_counter
 

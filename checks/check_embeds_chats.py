@@ -1,3 +1,6 @@
+# Simply python script testing retrieval system & embedding
+
+
 from time import perf_counter
 
 from langchain_classic.chains.constitutional_ai.prompts import revision_example
@@ -170,7 +173,7 @@ def simple_retrieval_system(simple=True):
 
 if __name__ == "__main__":
     start = perf_counter()
-    # check_embedding()
+    check_embedding()
     simple_retrieval_system(simple=False)
     end = perf_counter()
     print(f"Total time: {end - start}")
