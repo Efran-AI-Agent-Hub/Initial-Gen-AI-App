@@ -11,6 +11,7 @@ from setup import get_llm
 
 from functools import partial
 
+
 def simple_chat():
     llm = get_llm()
 
@@ -21,21 +22,22 @@ def simple_chat():
 
     # prompt = ChatPromptTemplate.from_template(template)
 
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a helpful assistant."),
-        MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{question}")
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful assistant."),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", "{question}"),
+        ]
+    )
 
     history = InMemoryChatMessageHistory()
     history.add_ai_message("Hello. What's your name and how old are you?")
     history.add_user_message("I am 25 years old. My name is Steve")
 
-
     print(history.messages)
 
     mem_chain = (
-        {"chat_history": lambda x : history.messages, "question": RunnablePassthrough()}
+        {"chat_history": lambda x: history.messages, "question": RunnablePassthrough()}
         | prompt
         | llm
         | StrOutputParser()
@@ -46,13 +48,19 @@ def simple_chat():
     print(resp)
 
 
-def simulate_convo(chain: RunnableSerializable[Any, str], history: InMemoryChatMessageHistory, chat_input):
+def simulate_convo(
+    chain: RunnableSerializable[Any, str],
+    history: InMemoryChatMessageHistory,
+    chat_input,
+):
     for question in chat_input:
         resp = chain.invoke(question)
         print("RESPONSE:\n", resp)
         history.add_user_message(question)
         history.add_ai_message(resp)
         print("HISTORY\n:", history.messages)
+
+
 def get_session_history(store, session_id: str):
     if session_id not in store:
         history = InMemoryChatMessageHistory()
@@ -65,16 +73,20 @@ def get_session_history(store, session_id: str):
 def conv_with_mem():
     session_store = {}
     llm = get_llm()
-    prompt = ChatPromptTemplate.from_messages([
-        #! Warning: Using a custom format for LLM response. Make sure custom format doesn't confuse LLM response since it's being appended to history
-        ("system",
-         """You are a helpful assistant. Answer the user's question based on the following history: in the format
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            #! Warning: Using a custom format for LLM response. Make sure custom format doesn't confuse LLM response since it's being appended to history
+            (
+                "system",
+                """You are a helpful assistant. Answer the user's question based on the following history: in the format
          == Your Question is: {question}
          ++ My Answer is: [You answer goes here]
-         """),
-        MessagesPlaceholder(variable_name="history"),
-        ("human", "{question}")
-    ])
+         """,
+            ),
+            MessagesPlaceholder(variable_name="history"),
+            ("human", "{question}"),
+        ]
+    )
 
     chain = prompt | llm | StrOutputParser()
 
@@ -84,17 +96,17 @@ def conv_with_mem():
         chain,
         history_factory,
         input_messages_key="question",
-        history_messages_key="history"
+        history_messages_key="history",
     )
 
     config = {"configurable": {"session_id": "steve_from_texas"}}
 
-    chat_input_list = ["What was your name again?",
-                       "My favorite sport is Baseball, what is yours?",
-                       "How many states are in the US? Also, what is my and your name?",
-                       "What's my favorite sport again? What's your favorite sport"]
-
-
+    chat_input_list = [
+        "What was your name again?",
+        "My favorite sport is Baseball, what is yours?",
+        "How many states are in the US? Also, what is my and your name?",
+        "What's my favorite sport again? What's your favorite sport",
+    ]
 
     for question in chat_input_list:
         resp = chain_with_history.invoke({"question": question}, config=config)
@@ -102,7 +114,6 @@ def conv_with_mem():
 
 
 if __name__ == "__main__":
-
     # simple_chat()
     conv_with_mem()
     print("done")

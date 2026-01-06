@@ -157,9 +157,11 @@ def simple_retrieval_system(simple=True):
 
     prompt = ChatPromptTemplate.from_template(template)
 
-
     rag_chain = (
-        {"context": retriever | format_docs, "question": RunnablePassthrough()} # context: invokes retriever for input then passes through to format_docs for formatting RAG results, question: just passes input along
+        {
+            "context": retriever | format_docs,
+            "question": RunnablePassthrough(),
+        }  # context: invokes retriever for input then passes through to format_docs for formatting RAG results, question: just passes input along
         | prompt
         | llm
         | StrOutputParser()
