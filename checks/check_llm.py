@@ -1,77 +1,63 @@
+# Simple python script testing asking questions to LLM
+
 from typing import List
 from time import perf_counter
+
+from langchain_ollama import OllamaLLM
+
+from setup import get_llm
 
 import asyncio
 from src.prompt_engi import process_response, process_prompt_template
 
 
 class LLMStreamTester:
-    def __init__(self, params):
-        self.params = params
+    def __init__(self, model: OllamaLLM):
+        self.model = model
 
     async def execute_prompt(self, prompts: List[str], msg=None, stream_mode=False):
         if msg:
             print(msg)
         if len(prompts) == 1:
-            await process_response(self.params, prompts[0], stream_mode=stream_mode)
+            await process_response(self.model, prompts[0], stream_mode=stream_mode)
         else:
             print_lock = asyncio.Lock()
             tasks = [
-                process_response(self.params, prompt, stream_mode, print_lock)
+                process_response(self.model, prompt, stream_mode, print_lock)
                 for prompt in prompts
             ]
             print("CONCURRENT REQUESTS:")
             await asyncio.gather(*tasks)
 
 
-def check_output_stream():
-    params = {
-        "num_predict": 128,
-        "temperature": 0.5,
-        "top_p": 0.2,
-        "top_k": 1,
-    }
-
-    llm_tester = LLMStreamTester(params)
+async def check_output_stream():
+    llm = get_llm()
+    llm_tester = LLMStreamTester(llm)
     prompts = ["The wind is "]
     msg = "SINGLE REQUEST:"
     stream_mode = False
-    asyncio.run(
-        llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
-    )
+    await llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
 
     prompts = ["The wind is "]
     msg = "SINGLE STREAM REQUEST:"
     stream_mode = True
-    asyncio.run(
-        llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
-    )
+    await llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
 
     prompts = ["The wind is ", "what color is the sky?", "whats 2+2?"]
     msg = "CONCURRENT REQUESTS:"
     stream_mode = False
-    asyncio.run(
-        llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
-    )
+    await llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
 
     prompts = ["The wind is ", "what color is the sky?", "whats 2+2?"]
     msg = "CONCURRENT REQUESTS:"
     stream_mode = True
-    asyncio.run(
-        llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
-    )
+    await llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
 
 
-def check_output_prompts():
-    params = {
-        "num_predict": 300,
-        "temperature": 0.5,
-        "top_p": 0.2,
-        "top_k": 1,
-    }
-
+async def check_output_prompts():
+    llm = get_llm()
+    llm_tester = LLMStreamTester(llm)
     stream_mode = True
-    llm_tester = LLMStreamTester(params)
 
     # ? Simple statement or request
     # Useful for exploring model capabilities and checking how it responds with minimal input
@@ -81,12 +67,12 @@ def check_output_prompts():
         "Once upon a time in a distant galaxy",
         "The benefits of sustainable energy include",
     ]
-    asyncio.run(
-        llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
-    )
+    await llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
 
     # ? Prompts with no examples or prior specific training on tasks.
     # Tests  model's ability to understand instructions and apply knowledge to new context w/o demonstration
+    # llm = get_llm()
+    # llm_tester = LLMStreamTester(llm)
     msg = "ZERO-SHOT PROMPTS:"
     prompts = [
         """Classify the following moview review as positive or negative:
@@ -98,9 +84,7 @@ def check_output_prompts():
         "In one paragraph, summarize the current state of climate change in relation to geo politics",
         "Translate the following phrase from English to Spanish: 'Can a person have too many cats? Of cource not!'",
     ]
-    asyncio.run(
-        llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
-    )
+    await llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
 
     # ? Prompt provides single example for task before asking to perform task
     # Provides model format and template for desired output
@@ -124,9 +108,7 @@ def check_output_prompts():
         Based on that, give a simple explaination of Blockchain
         """,
     ]
-    asyncio.run(
-        llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
-    )
+    await llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
 
     # ? Prompt provides several examples before asking for task
     # Provides clearer patter for model to better understand desired output, style, format, & reasoning
@@ -144,9 +126,7 @@ def check_output_prompts():
         "The fabric is incredibly soft and the fit is perfect, but it took nearly a month to get to my house."
         """
     ]
-    asyncio.run(
-        llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
-    )
+    await llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
 
     # ? Prompt encourages model to break down complex problem step by step.
     # Helps model arrive to correct solution
@@ -158,9 +138,7 @@ def check_output_prompts():
         Break down each step of your calculation
         """
     ]
-    asyncio.run(
-        llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
-    )
+    await llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
 
     # ? Prompts that ask model to generate multiple solutions to same question then evaluate different approaches for result to determine most consistent/reliable result.
     # Enhances model accuracy by leveraging models ability to tackle problem from multiple angles.
@@ -172,32 +150,30 @@ def check_output_prompts():
         Provide three independent calculations and explanations, then determine the most consistent result.
         """
     ]
-    asyncio.run(
-        llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
-    )
+    await llm_tester.execute_prompt(prompts=prompts, msg=msg, stream_mode=stream_mode)
 
 
-def check_output_templates():
-    params = {
-        "num_predict": 128,
-        "temperature": 0.5,
-        "top_p": 0.2,
-        "top_k": 1,
-    }
+async def check_output_templates():
+    llm = get_llm()
 
-    #? Text Summarization
+    # ? Text Summarization
     template_str = "Summarize the {content} in one sentence."
-    input_list = [{"content": """
+    input_list = [
+        {
+            "content": """
         The rapid advancement of technology in the 21st century has transformed various industries, including healthcare, education, and transportation. 
         Innovations such as artificial intelligence, machine learning, and the Internet of Things have revolutionized how we approach everyday tasks and complex problems. 
         For instance, AI-powered diagnostic tools are improving the accuracy and speed of medical diagnoses, while smart transportation systems are making cities more efficient and reducing traffic congestion. 
         Moreover, online learning platforms are making education more accessible to people around the world, breaking down geographical and financial barriers. 
         These technological developments are not only enhancing productivity but also contributing to a more interconnected and informed society.
-    """}]
+    """
+        }
+    ]
 
-    asyncio.run(process_prompt_template(template_str, input_list, params=params, concurrent=True))
+    await process_prompt_template(llm, template_str, input_list, concurrent=True)
 
-    #? Quick Answer
+    # ? Quick Answer
+
     template_str = """
     Answer the {question} based on the {content}.
     Respond "Unsure about answer" if not sure about the answer.
@@ -205,17 +181,21 @@ def check_output_templates():
     Answer:
     """
 
-    input_list = [{
-        "question": "Which planets in the solar system are rocky and solid?",
-        "content": """
+    input_list = [
+        {
+            "question": "Which planets in the solar system are rocky and solid?",
+            "content": """
             The solar system consists of the Sun, eight planets, their moons, dwarf planets, and smaller objects like asteroids and comets. 
             The inner planets—Mercury, Venus, Earth, and Mars—are rocky and solid. 
             The outer planets—Jupiter, Saturn, Uranus, and Neptune—are much larger and gaseous.
-        """}]
+        """,
+        }
+    ]
 
-    asyncio.run(process_prompt_template(template_str, input_list, params=params, concurrent=True))
+    await process_prompt_template(llm, template_str, input_list, concurrent=True)
 
-    #? Code Generation
+    # ? Code Generation
+    llm = get_llm()
     template_str = """
    Generate an SQL query based on the {description}
     
@@ -223,18 +203,22 @@ def check_output_templates():
     
     """
 
-    input_list = [{
-        "description": """
+    input_list = [
+        {
+            "description": """
             Retrieve the names and email addresses of all customers from the 'customers' table who have made a purchase in the last 30 days. 
             The table 'purchases' contains a column 'purchase_date'
-        """}]
+        """
+        }
+    ]
 
-    asyncio.run(process_prompt_template(template_str, input_list, params=params, concurrent=True))
+    await process_prompt_template(llm, template_str, input_list, concurrent=True)
+
 
 if __name__ == "__main__":
     start = perf_counter()
-    # check_output_stream()
-    # check_output_prompts()
-    check_output_templates()
+    asyncio.run(check_output_stream())
+    asyncio.run(check_output_prompts())
+    asyncio.run(check_output_templates())
     end = perf_counter()
     print(f"Elapsed time: {end - start} seconds")

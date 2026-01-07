@@ -1,0 +1,1 @@
+This directory holds simple scripts where I'm trying out the various features of langchain, LLM, & Agentic AI development
