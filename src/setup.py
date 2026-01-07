@@ -22,7 +22,7 @@ def get_llm(config_location="configs/config.yaml", model_type="llm") -> ChatOlla
             model=config["ollama_config"]["chat_model"],
             base_url=config["ollama_config"]["url"],
             **config["model_params"],
-            reasoning=False
+            reasoning=config["ollama_config"]["chat_reasoning"]
         )
     else:
         llm_model = OllamaLLM(
@@ -36,13 +36,13 @@ def get_llm(config_location="configs/config.yaml", model_type="llm") -> ChatOlla
 
 
 if __name__ == "__main__":
-    # model = get_llm()
-    # resp = model.invoke("what day is today?")
-    # print(resp)
-    #
-    # embedding_model = get_llm(model_type="embed")
-    # resp = embedding_model.embed_query("hello world")
-    # print(resp)
+    model = get_llm()
+    resp = model.invoke("what day is today?")
+    print(resp)
+
+    embedding_model = get_llm(model_type="embed")
+    resp = embedding_model.embed_query("hello world")
+    print(resp)
 
     model = get_llm(model_type="chat") # get_chat_llm()
     resp = model.invoke("What is 2+2?")
