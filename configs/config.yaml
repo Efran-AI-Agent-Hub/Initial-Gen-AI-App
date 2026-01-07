@@ -1,6 +1,7 @@
 ollama_config:
   llm_model: gemma3:4b
   embedding_model: nomic-embed-text
+  chat_model: qwen3:4b
   url: http://localhost:11434
 model_params: # Ollama Param Info: https://github.com/ollama/ollama/blob/main/docs/api.md
   num_predict: 128 # Ollama's equivalent to max_new_tokens

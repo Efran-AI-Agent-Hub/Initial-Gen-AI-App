@@ -21,7 +21,7 @@ from langchain_text_splitters import (
 )
 from langchain_chroma import Chroma
 
-from setup import get_embed, get_llm
+from setup import get_llm
 
 
 def check_embedding(
@@ -39,7 +39,7 @@ def check_embedding(
 
     texts = [text.page_content for text in chunks]
 
-    embedding_model = get_embed()
+    embedding_model = get_llm(model_type="embed")
     embedding_result = embedding_model.embed_documents(texts)
 
     # ? Trying Vector Store
@@ -139,7 +139,7 @@ def simple_retrieval_system(simple=True):
     chunks = text_splitter.split_documents(document)
 
     # Embed doc into vector and store in RAG
-    embedding_model: OllamaEmbeddings = get_embed()
+    embedding_model: OllamaEmbeddings = get_llm(model_type="embed")
     vector_store = Chroma.from_documents(
         chunks, embedding_model, collection_name="langchain_docs"
     )
