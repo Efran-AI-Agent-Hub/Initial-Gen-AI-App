@@ -14,6 +14,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -25,6 +26,7 @@ async def lifespan(app: FastAPI):
 
     # TODO: Perform cleanup tasks like closing connections when we get to that point
 
+
 app = FastAPI(
     title="Efran's LLM Service API",
     description="Efran's scalable LLM application with RAG and agentic capabilities",
@@ -34,10 +36,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # TODO: Configure this properly in production
+    allow_origins=["*"],  # TODO: Configure this properly in production
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 app.include_router(health.router, tags=["health"])
@@ -48,6 +50,5 @@ if __name__ == "__main__":
         "app:app",
         host="localhost",
         port=8000,
-        log_level="info",)
-
-    print("hello world")
+        log_level="info",
+    )
