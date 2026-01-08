@@ -1,0 +1,14 @@
+import logging
+
+from fastapi import APIRouter, HTTPException
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+@router.get("/health")
+async def health_check():
+    """
+    Simple return to verify API is working
+    """
+    return {"status": "ok"}

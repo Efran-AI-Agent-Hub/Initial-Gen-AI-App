@@ -1,50 +1,53 @@
-from ollama import chat
-from ollama import ChatResponse
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+import uvicorn
+import logging
 
-model = "gemma3:4b"
-message = {"role": "user", "content": "What is 17 × 23?"}
+from src.routes import health
 
+from starlette.middleware.cors import CORSMiddleware
 
-def main(stream_flag):
-    response: ChatResponse = chat(model=model, messages=[message], stream=stream_flag)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
-    if stream_flag:
-        in_thinking = False
-        content = ""
-        thinking = ""
+logger = logging.getLogger(__name__)
 
-        stream: ChatResponse = response
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan context manager for startup and shutdown events
+    """
+    logger.info("Starting up FastAPI application...")
+    yield
+    logger.info("Shutting down FastAPI application...")
 
-        for chunk in stream:
-            if chunk.message.thinking:
-                if not in_thinking:
-                    in_thinking = True
-                    print("Thinking:\n", end="", flush=True)
-                print(chunk.message.thinking, end="", flush=True)
-                # accumulate the partial thinking
-                thinking += chunk.message.thinking
-            elif chunk.message.content:
-                if in_thinking:
-                    in_thinking = False
-                    print("\n\nAnswer:\n", end="", flush=True)
-                print(chunk.message.content, end="", flush=True)
-                # accumulate the partial content
-                content += chunk.message.content
+    # TODO: Perform cleanup tasks like closing connections when we get to that point
 
-            # append the accumulated fields to the messages for the next request
-            new_message = [{"role": "assistant", thinking: thinking, content: content}]
+app = FastAPI(
+    title="Efran's LLM Service API",
+    description="Efran's scalable LLM application with RAG and agentic capabilities",
+    version="0.1.0",
+    lifespan=lifespan,
+)
 
-    else:
-        print("RESPONSE:")
-        print(response)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # TODO: Configure this properly in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
-        print("MESSAGE:")
-        print(response["message"])
-
-        print("CONTENT:")
-        print(response["message"]["content"])
+app.include_router(health.router, tags=["health"])
 
 
 if __name__ == "__main__":
-    stream_flag = True
-    main(stream_flag=stream_flag)
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=8000,
+        log_level="info",)
+
+    print("hello world")
