@@ -2,7 +2,7 @@ import yaml
 from langchain_ollama import OllamaLLM, OllamaEmbeddings, ChatOllama
 
 
-def get_llm(config_location="configs/config.yaml", model_type="llm") -> ChatOllama | OllamaLLM | OllamaEmbeddings:
+def get_llm(config_location="resources/configs/config.yaml", model_type="llm") -> ChatOllama | OllamaLLM | OllamaEmbeddings:
     if model_type not in ["llm", "embed", "chat"]:
         raise f"Invalid type {type}. Must be either 'llm' or 'embed' or 'chat'"
 
