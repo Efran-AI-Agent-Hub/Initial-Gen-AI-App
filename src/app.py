@@ -22,8 +22,8 @@ async def lifespan(app: FastAPI):
     Lifespan context manager for startup and shutdown events
     """
     logger.info("Starting up FastAPI application...")
-    #TODO: probably want to initialize LLM models in context manager
-
+    # TODO: probably want to initialize LLM models in context manager
+    # TODO: add redis and env/secrets configs
     yield
     logger.info("Shutting down FastAPI application...")
 

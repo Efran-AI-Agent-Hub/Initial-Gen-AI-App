@@ -16,6 +16,7 @@ async def llm_chat(msg: str) -> ChatResponse:
     request = ChatRequest(msg=msg)
 
     try:
+        #TODO add option for streaming
         logger.info(f"Recieved chat request: {request.msg[:50]}")
         llm = get_llm(model_type="llm")
 
