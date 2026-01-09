@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 import uvicorn
 import logging
 
-from src.routes import health
+from routes.health.controller import  health_router
+from routes.llm_chat.controller import chat_router
 
 from starlette.middleware.cors import CORSMiddleware
 
@@ -21,6 +22,8 @@ async def lifespan(app: FastAPI):
     Lifespan context manager for startup and shutdown events
     """
     logger.info("Starting up FastAPI application...")
+    #TODO: probably want to initialize LLM models in context manager
+
     yield
     logger.info("Shutting down FastAPI application...")
 
@@ -42,10 +45,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(health.router, tags=["health"])
-
+app.include_router(health_router, tags=["health"])
+app.include_router(chat_router, tags=["llm", "chat"])
 
 if __name__ == "__main__":
+    # TODO: Add configs via yaml
     uvicorn.run(
         "app:app",
         host="localhost",
