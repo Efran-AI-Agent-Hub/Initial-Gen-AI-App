@@ -7,7 +7,7 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from typing import Any
 
-from setup import get_llm
+from utils.setup import get_llm
 
 from functools import partial
 

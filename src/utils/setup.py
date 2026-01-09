@@ -2,7 +2,9 @@ import yaml
 from langchain_ollama import OllamaLLM, OllamaEmbeddings, ChatOllama
 
 
-def get_llm(config_location="configs/config.yaml", model_type="llm") -> ChatOllama | OllamaLLM | OllamaEmbeddings:
+def get_llm(
+    config_location="resources/configs/config.yaml", model_type="llm"
+) -> ChatOllama | OllamaLLM | OllamaEmbeddings:
     if model_type not in ["llm", "embed", "chat"]:
         raise f"Invalid type {type}. Must be either 'llm' or 'embed' or 'chat'"
 
@@ -22,7 +24,7 @@ def get_llm(config_location="configs/config.yaml", model_type="llm") -> ChatOlla
             model=config["ollama_config"]["chat_model"],
             base_url=config["ollama_config"]["url"],
             **config["model_params"],
-            reasoning=config["ollama_config"]["chat_reasoning"]
+            reasoning=config["ollama_config"]["chat_reasoning"],
         )
     else:
         llm_model = OllamaLLM(
@@ -34,7 +36,6 @@ def get_llm(config_location="configs/config.yaml", model_type="llm") -> ChatOlla
     return llm_model
 
 
-
 if __name__ == "__main__":
     model = get_llm()
     resp = model.invoke("what day is today?")
@@ -44,6 +45,6 @@ if __name__ == "__main__":
     resp = embedding_model.embed_query("hello world")
     print(resp)
 
-    model = get_llm(model_type="chat") # get_chat_llm()
+    model = get_llm(model_type="chat")  # get_chat_llm()
     resp = model.invoke("What is 2+2?")
     print(resp.content)

@@ -5,7 +5,7 @@ from time import perf_counter
 
 from langchain_ollama import OllamaLLM
 
-from setup import get_llm
+from utils.setup import get_llm
 
 import asyncio
 from src.prompt_engi import process_response, process_prompt_template
