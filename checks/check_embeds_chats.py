@@ -3,7 +3,6 @@
 
 from time import perf_counter
 
-from langchain_classic.chains.constitutional_ai.prompts import revision_example
 from langchain_classic.chains.retrieval_qa.base import RetrievalQA
 
 from langchain_classic.retrievers import ParentDocumentRetriever
@@ -12,16 +11,16 @@ from langchain_classic.retrievers import ParentDocumentRetriever
 from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableSequence, RunnablePassthrough
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.stores import InMemoryStore
-from langchain_ollama import OllamaLLM, OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
 )
 from langchain_chroma import Chroma
 
-from setup import get_llm
+from utils.setup import get_llm
 
 
 def check_embedding(
