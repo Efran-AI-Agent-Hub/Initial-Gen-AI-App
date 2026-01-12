@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 import logging
 
-from routes.health.controller import  health_router
+from routes.health.controller import health_router
 from routes.llm_chat.controller import chat_router
 
 from starlette.middleware.cors import CORSMiddleware

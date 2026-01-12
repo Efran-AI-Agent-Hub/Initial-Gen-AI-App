@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 chat_router = APIRouter()
 
+
 @chat_router.post("/chat", status_code=status.HTTP_201_CREATED)
 async def llm_chat(msg: str) -> ChatResponse:
     """
@@ -16,14 +17,14 @@ async def llm_chat(msg: str) -> ChatResponse:
     request = ChatRequest(msg=msg)
 
     try:
-        #TODO add option for streaming
+        # TODO add option for streaming
         logger.info(f"Recieved chat request: {request.msg[:50]}")
         llm = get_llm(model_type="llm")
 
         resp = await llm.ainvoke(request.msg)
 
         # Handle different response types
-        if hasattr(resp, 'content'):
+        if hasattr(resp, "content"):
             response_text = resp.content
         else:
             response_text = str(resp)
@@ -36,6 +37,5 @@ async def llm_chat(msg: str) -> ChatResponse:
     except HTTPException as e:
         logger.error(f"Error processing chat request: {str(e)}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Error processing request: {str(e)}"
+            status_code=500, detail=f"Error processing request: {str(e)}"
         )

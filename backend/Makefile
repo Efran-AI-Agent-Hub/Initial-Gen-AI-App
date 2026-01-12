@@ -18,3 +18,6 @@ run-backend-dev:
 run-frontend-dev:
 	@echo "$(BLUE)Building project frontend...$(RESET)"
 	@PYTHONPATH=. py src/app_frontend.py
+
+ruff:
+	ruff format

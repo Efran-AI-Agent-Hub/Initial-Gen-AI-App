@@ -7,13 +7,12 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from utils.constants import ENV_FILE
 
+
 class LLMSettings(BaseSettings):
-    config_path:str = Field(..., description="Path to config file")
+    config_path: str = Field(..., description="Path to config file")
 
     model_config = SettingsConfigDict(
-        env_file=ENV_FILE,
-        env_prefix="llm_",
-        extra="allow"
+        env_file=ENV_FILE, env_prefix="llm_", extra="allow"
     )
 
     @classmethod
