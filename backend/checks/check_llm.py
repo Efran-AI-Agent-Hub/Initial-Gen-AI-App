@@ -8,7 +8,7 @@ from langchain_ollama import OllamaLLM
 from utils.setup import get_llm
 
 import asyncio
-from src.prompt_engi import process_response, process_prompt_template
+from prompt_engi import process_response, process_prompt_template
 
 
 class LLMStreamTester:

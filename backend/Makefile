@@ -1,3 +1,5 @@
+#! NOTE: Ensure you're dc into backend folder before running!
+
 .PHONY: run-dev
 
 # Define color variables
@@ -9,6 +11,10 @@ BLUE := $(shell printf "\033[0;34m")
 RESET := $(shell printf "\033[0m")
 
 
-run-dev:
-	@echo "$(BLUE)Building the project...$(RESET)"
+run-backend-dev:
+	@echo "$(BLUE)Building project backend...$(RESET)"
 	@PYTHONPATH=. py src/app.py
+
+run-frontend-dev:
+	@echo "$(BLUE)Building project frontend...$(RESET)"
+	@PYTHONPATH=. py src/app_frontend.py

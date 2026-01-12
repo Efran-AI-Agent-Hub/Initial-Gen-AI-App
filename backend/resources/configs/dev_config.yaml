@@ -9,4 +9,5 @@ model_params: # Ollama Param Info: https://github.com/ollama/ollama/blob/main/do
   temperature: 0.0 # Randomness (0.0 = deterministic, 1.0 = creative)
   top_p: 0.2 # Nucleus sampling
   top_k: 5 # Top k sampling
-
+logging:
+  level: DEBUG
