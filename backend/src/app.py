@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 import logging
 
+from utils.setup import LLMSettings
 from routes.health.controller import health_router
 from routes.llm_chat.controller import chat_router
 
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI):
     Lifespan context manager for startup and shutdown events
     """
     logger.info("Starting up FastAPI application...")
+    settings = LLMSettings()
     # TODO: probably want to initialize LLM models in context manager
     # TODO: add redis and env/secrets configs
     yield
@@ -46,7 +48,7 @@ app.add_middleware(
 )
 
 app.include_router(health_router, tags=["health"])
-app.include_router(chat_router, tags=["llm", "chat"])
+app.include_router(chat_router, tags=["llm"])
 
 if __name__ == "__main__":
     # TODO: Add configs via yaml
@@ -55,4 +57,5 @@ if __name__ == "__main__":
         host="localhost",
         port=8000,
         log_level="info",
+        reload=True
     )

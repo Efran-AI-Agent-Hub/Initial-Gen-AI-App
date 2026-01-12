@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, status, HTTPException
 from routes.llm_chat.models import ChatRequest, ChatResponse
-from utils.setup import get_llm
+from utils.setup import LLMSettings
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,8 @@ async def llm_chat(msg: str) -> ChatResponse:
     try:
         # TODO add option for streaming
         logger.info(f"Recieved chat request: {request.msg[:50]}")
-        llm = get_llm(model_type="llm")
+        settings = LLMSettings()
+        llm = settings.get_llm_model()
 
         resp = await llm.ainvoke(request.msg)
 
