@@ -5,7 +5,7 @@ from time import perf_counter
 
 from langchain_ollama import OllamaLLM
 
-from utils.setup import get_llm
+from utils.setup import LLMSettings
 
 import asyncio
 from prompt_engi import process_response, process_prompt_template
@@ -31,7 +31,8 @@ class LLMStreamTester:
 
 
 async def check_output_stream():
-    llm = get_llm()
+    settings = LLMSettings()
+    llm = settings.get_llm_model()
     llm_tester = LLMStreamTester(llm)
     prompts = ["The wind is "]
     msg = "SINGLE REQUEST:"
@@ -55,7 +56,8 @@ async def check_output_stream():
 
 
 async def check_output_prompts():
-    llm = get_llm()
+    settings = LLMSettings()
+    llm = settings.get_llm_model()
     llm_tester = LLMStreamTester(llm)
     stream_mode = True
 
@@ -154,7 +156,8 @@ async def check_output_prompts():
 
 
 async def check_output_templates():
-    llm = get_llm()
+    settings = LLMSettings()
+    llm = settings.get_llm_model()
 
     # ? Text Summarization
     template_str = "Summarize the {content} in one sentence."
@@ -195,7 +198,8 @@ async def check_output_templates():
     await process_prompt_template(llm, template_str, input_list, concurrent=True)
 
     # ? Code Generation
-    llm = get_llm()
+    settings = LLMSettings()
+    llm = settings.get_llm_model()
     template_str = """
    Generate an SQL query based on the {description}
     

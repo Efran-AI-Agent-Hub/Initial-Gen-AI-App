@@ -20,7 +20,7 @@ from langchain_text_splitters import (
 )
 from langchain_chroma import Chroma
 
-from utils.setup import get_llm
+from utils.setup import LLMSettings
 
 
 def check_embedding(
@@ -38,7 +38,8 @@ def check_embedding(
 
     texts = [text.page_content for text in chunks]
 
-    embedding_model = get_llm(model_type="embed")
+    settings = LLMSettings()
+    embedding_model = settings.get_embed_model()
     embedding_result = embedding_model.embed_documents(texts)
 
     # ? Trying Vector Store
@@ -103,7 +104,7 @@ def check_embedding(
     print("== Top main doc:", retrieved_docs[0].page_content)
     print("=" * 10)
     # ? QA Retrieval
-    llm = get_llm()
+    llm = settings.get_llm_model()
 
     qa = RetrievalQA.from_chain_type(
         llm=llm,
@@ -138,7 +139,8 @@ def simple_retrieval_system(simple=True):
     chunks = text_splitter.split_documents(document)
 
     # Embed doc into vector and store in RAG
-    embedding_model: OllamaEmbeddings = get_llm(model_type="embed")
+    settings = LLMSettings()
+    embedding_model: OllamaEmbeddings = settings.get_embed_model()
     vector_store = Chroma.from_documents(
         chunks, embedding_model, collection_name="langchain_docs"
     )
@@ -146,7 +148,7 @@ def simple_retrieval_system(simple=True):
         search_type="similarity", search_kwargs={"k": 4}
     )
 
-    llm = get_llm()
+    llm = settings.get_llm_model()
 
     template = """Answer the question based only on the following context. If you cannot answer the question based on the context say so.
     Context: {context}

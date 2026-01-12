@@ -2,7 +2,7 @@ from langchain_core.tools import tool
 from langchain_experimental.utilities import PythonREPL
 from langchain.agents import create_agent
 
-from utils.setup import get_llm
+from utils.setup import LLMSettings
 
 
 @tool
@@ -24,7 +24,8 @@ def python_calculator(code: str):
 
 def simple_tool():
     tools = [static_weather_resp, python_calculator]
-    llm = get_llm(model_type="chat")
+    settings = LLMSettings()
+    llm = settings.get_chat_model()
 
     agent = create_agent(
         model=llm,

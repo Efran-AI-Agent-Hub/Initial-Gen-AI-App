@@ -1,5 +1,7 @@
 import yaml
 from typing import Literal
+
+from anyio.functools import lru_cache
 from langchain_ollama import OllamaLLM, OllamaEmbeddings, ChatOllama
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,6 +15,23 @@ class LLMSettings(BaseSettings):
         env_prefix="llm_",
         extra="allow"
     )
+
+    @classmethod
+    @lru_cache()
+    def get_instance(cls):
+        return cls()
+
+    @property
+    @lru_cache
+    def config_data(self):
+        """
+        Loads the YAML file once and caches the dictionary.
+        """
+        with open(self.config_path, "r") as stream:
+            try:
+                return yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                raise RuntimeError(f"Error parsing config YAML: {exc}")
 
     def load_config(self):
         with open(self.config_path) as stream:

@@ -7,13 +7,13 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from typing import Any
 
-from utils.setup import get_llm
-
+from utils.setup import LLMSettings
 from functools import partial
 
 
 def simple_chat():
-    llm = get_llm()
+    settings = LLMSettings()
+    llm = settings.get_llm_model()
 
     template = """Answer the user's question based on the following history:
     History: {history}
@@ -72,7 +72,8 @@ def get_session_history(store, session_id: str):
 
 def conv_with_mem():
     session_store = {}
-    llm = get_llm()
+    settings = LLMSettings()
+    llm = settings.get_llm_model()
     prompt = ChatPromptTemplate.from_messages(
         [
             #! Warning: Using a custom format for LLM response. Make sure custom format doesn't confuse LLM response since it's being appended to history

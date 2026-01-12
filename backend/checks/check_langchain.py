@@ -1,6 +1,6 @@
 # Simple python script testing langchain chat feature
 
-from utils.setup import get_llm
+from utils.setup import LLMSettings
 
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
@@ -22,7 +22,8 @@ class SimpleOutput(BaseModel):
 
 
 def chat_msg():
-    llm = get_llm()
+    settings = LLMSettings()
+    llm = settings.get_llm_model()
 
     msg = llm.invoke(
         [
@@ -36,7 +37,8 @@ def chat_msg():
 
 
 def chat_msg_with_template():
-    llm = get_llm()
+    settings = LLMSettings()
+    llm = settings.get_llm_model()
     # ? Chat Prompt Templates
     prompt = ChatPromptTemplate(
         [
