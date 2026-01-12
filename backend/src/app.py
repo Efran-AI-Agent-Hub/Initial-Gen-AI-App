@@ -52,10 +52,4 @@ app.include_router(chat_router, tags=["llm"])
 
 if __name__ == "__main__":
     # TODO: Add configs via yaml
-    uvicorn.run(
-        "app:app",
-        host="localhost",
-        port=8000,
-        log_level="info",
-        reload=True
-    )
+    uvicorn.run("app:app", host="localhost", port=8000, log_level="info", reload=True)
