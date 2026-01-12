@@ -1,19 +1,11 @@
+# uv add --package  infra
+
 [project]
 name = "infra"
 version = "0.1.0"
 description = "Infrastructure setup and RAG utilities"
 requires-python = ">=3.11"
-dependencies = [
-    "langchain-ollama>=0.2.0",
-    "langchain-core>=0.3.0",
-    "langchain-community>=0.3.0",
-    "psycopg[binary]>=3.2.0",
-    "redis>=5.2.0",
-    "pyyaml>=6.0.2",
-    # RAG-specific
-    "chromadb>=0.5.0",
-    "sentence-transformers>=3.0.0",
-]
+dependencies = []
 
 [tool.uv]
 dev-dependencies = [
