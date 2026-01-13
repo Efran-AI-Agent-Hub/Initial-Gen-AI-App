@@ -1,5 +1,4 @@
 import yaml
-from typing import Literal
 
 from anyio.functools import lru_cache
 from langchain_ollama import OllamaLLM, OllamaEmbeddings, ChatOllama
