@@ -11,7 +11,7 @@ BLUE := $(shell printf "\033[0;34m")
 RESET := $(shell printf "\033[0m")
 
 
-ingest-steam-game-db:
+ingest-steam-games:
 	@echo "$(BLUE)Building project backend...$(RESET)"
 	@PYTHONPATH=. py src/steam_db_ingestion.py
 

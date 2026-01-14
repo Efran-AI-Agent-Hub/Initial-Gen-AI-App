@@ -7,12 +7,11 @@ description = "Infrastructure setup and RAG utilities"
 requires-python = ">=3.11"
 dependencies = [
     "kagglehub>=0.4.0",
-    "pandas>=2.3.3",
-    "polars>=1.37.1",
     "pydantic>=2.12.5",
 ]
 
 [tool.uv]
 dev-dependencies = [
     "pytest>=8.3.0",
+    "ruff>=0.14.10",
 ]
