@@ -5,13 +5,8 @@ Normalizes CSV data into a relational SQLite database following industry best pr
 import csv
 import sqlite3
 import pandas as pd
-from pathlib import Path
 from typing import List, Dict, Any
-import json
-from datetime import datetime
-
 from pprint import pprint
-
 import os
 
 DB_PATH = "data"
@@ -473,7 +468,7 @@ class SteamGamesDB:
         self.conn.commit()
         print(f"✓ Successfully ingested {len(games)} games")
 
-    def ingest_csv_stream(self, csv_path: str):
+    def ingest_csv_stream_old(self, csv_path: str):
         cols = ['AppID', 'Name', 'Release date', 'Estimated owners', 'Peak CCU', 'Required age', 'Price', 'DiscountDLC count', 'About the game', 'Supported languages', 'Full audio languages', 'Reviews', 'Header image', 'Website', 'Support url', 'Support email', 'Windows', 'Mac', 'Linux', 'Metacritic score', 'Metacritic url', 'User score', 'Positive', 'Negative', 'Score rank', 'Achievements', 'Recommendations', 'Notes', 'Average playtime forever', 'Average playtime two weeks', 'Median playtime forever', 'Median playtime two weeks', 'Developers', 'Publishers', 'Categories', 'Genres', 'Tags', 'Screenshots', 'Movies']
 
         with open(csv_path, "rb") as csv_file_bytes:
@@ -499,6 +494,36 @@ class SteamGamesDB:
                     print(f"Error ingesting game {record}: {e}")
                     continue
 
+    def ingest_csv_stream(self, csv_path: str, chunk_size: int = 2500):
+        """Properly stream CSV with pandas chunking."""
+        chunks = pd.read_csv(
+            csv_path,
+            chunksize=chunk_size,
+            on_bad_lines='skip',
+            encoding='utf-8',
+            encoding_errors='replace'
+        )
+
+        total = 0
+        errors = []
+
+        for chunk_num, chunk_df in enumerate(chunks, 1):
+            # if chunk_num >= 5:
+            #     break
+            for _, row in chunk_df.iterrows():
+                # pprint(row.to_dict())
+                # print("===========")
+                try:
+                    self.ingest_game(row.to_dict())
+                    total += 1
+                except Exception as e:
+                    errors.append({"app_id": row.get("AppID"), "error": str(e)})
+            # print(total)
+
+            self.conn.commit()  # Commit per chunk
+            print(f"Chunk {chunk_num}: {total:,} games ingested")
+
+        return {"processed": total, "errors": len(errors)}
 
     def get_stats(self) -> Dict[str, int]:
         """Get database statistics."""
@@ -570,16 +595,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # check()
-    # csv_path = os.path.join(r"C:\Users\efran\.cache\kagglehub\datasets\fronkongames\steam-games-dataset\versions\31", "games_small.csv")
-    # df = pd.read_csv(csv_path, on_bad_lines="skip", low_memory=False, encoding="utf-8", encoding_errors="replace")
-    #
-    # df = df[:5]
-    # from pprint import pprint
-    # games = df.to_dict(orient="records")
-    # for idx, game in enumerate(games, 1):
-    #     print(idx)
-    #     print(game)
-    #
-    # cols = "AppID,Name,Release date,Estimated owners,Peak CCU,Required age,Price,DiscountDLC count,About the game,Supported languages,Full audio languages,Reviews,Header image,Website,Support url,Support email,Windows,Mac,Linux,Metacritic score,Metacritic url,User score,Positive,Negative,Score rank,Achievements,Recommendations,Notes,Average playtime forever,Average playtime two weeks,Median playtime forever,Median playtime two weeks,Developers,Publishers,Categories,Genres,Tags,Screenshots,Movies".split(",")
-    # print(cols)
