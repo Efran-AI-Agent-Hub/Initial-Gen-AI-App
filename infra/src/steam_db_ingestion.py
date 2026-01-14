@@ -2,13 +2,15 @@
 Steam Games Database Ingestion Script
 Normalizes CSV data into a relational SQLite database following industry best practices.
 """
-
+import csv
 import sqlite3
 import pandas as pd
 from pathlib import Path
 from typing import List, Dict, Any
 import json
 from datetime import datetime
+
+from pprint import pprint
 
 import os
 
@@ -445,13 +447,16 @@ class SteamGamesDB:
         print(f"Reading CSV from: {csv_path}")
 
         # Read CSV with pandas (better handling of complex CSVs)
-        # TODO: OPEN CSV and load files or skip records to avoid errors
-        df = pd.read_csv(csv_path, on_bad_lines="skip", low_memory=False, encoding="utf-8")
+        # TODO: Could potentially do this via reading as bytes and ingesting in chunks
+        df = pd.read_csv(csv_path, low_memory=False, encoding="utf-8",encoding_errors="replace")
+        df = df[:20]
 
         print(f"Found {len(df)} games to ingest")
 
         # Convert to list of dicts for easier processing
         games = df.to_dict("records")
+
+        pprint(games)
 
         # Ingest each game with transaction for better performance
         for idx, game in enumerate(games, 1):
@@ -467,6 +472,33 @@ class SteamGamesDB:
 
         self.conn.commit()
         print(f"✓ Successfully ingested {len(games)} games")
+
+    def ingest_csv_stream(self, csv_path: str):
+        cols = ['AppID', 'Name', 'Release date', 'Estimated owners', 'Peak CCU', 'Required age', 'Price', 'DiscountDLC count', 'About the game', 'Supported languages', 'Full audio languages', 'Reviews', 'Header image', 'Website', 'Support url', 'Support email', 'Windows', 'Mac', 'Linux', 'Metacritic score', 'Metacritic url', 'User score', 'Positive', 'Negative', 'Score rank', 'Achievements', 'Recommendations', 'Notes', 'Average playtime forever', 'Average playtime two weeks', 'Median playtime forever', 'Median playtime two weeks', 'Developers', 'Publishers', 'Categories', 'Genres', 'Tags', 'Screenshots', 'Movies']
+
+        with open(csv_path, "rb") as csv_file_bytes:
+            count = 0
+            for line_bytes in csv_file_bytes:
+                count += 1
+                if count == 1:
+                    continue # skipping name cols
+                try:
+                    line_str = line_bytes.decode("utf-8")
+                    parser = csv.reader([line_str])
+                    row_values = next(parser)
+                    record = dict(zip(cols, row_values))
+                    self.ingest_game(record)
+                    if count % 2500 == 0:
+                        self.conn.commit()
+                        print(f"Progress: {count} games ingested")
+                except UnicodeDecodeError as e:
+                    print(f"UnicodeDecodeError at record {count}. Skipping.: {e}")
+                    self.ingest_error += 1
+                    continue
+                except Exception as e:
+                    print(f"Error ingesting game {record}: {e}")
+                    continue
+
 
     def get_stats(self) -> Dict[str, int]:
         """Get database statistics."""
@@ -508,7 +540,6 @@ def main():
         handle="fronkongames/steam-games-dataset", force_download=False
     )
     print(f"Dataset path: {path}")
-
     # Initialize database
     db = SteamGamesDB("data")
 
@@ -516,8 +547,8 @@ def main():
     db.create_schema()
 
     # Ingest data
-    csv_path = f"{path}/games.csv"
-    db.ingest_csv(csv_path)
+    csv_path = os.path.join(path, "games.csv")
+    db.ingest_csv_stream(csv_path)
 
     # Print statistics
     print("\n" + "=" * 50)
@@ -537,6 +568,18 @@ def main():
     db.close()
     print("\n✓ Database ingestion complete!")
 
-
 if __name__ == "__main__":
     main()
+    # check()
+    # csv_path = os.path.join(r"C:\Users\efran\.cache\kagglehub\datasets\fronkongames\steam-games-dataset\versions\31", "games_small.csv")
+    # df = pd.read_csv(csv_path, on_bad_lines="skip", low_memory=False, encoding="utf-8", encoding_errors="replace")
+    #
+    # df = df[:5]
+    # from pprint import pprint
+    # games = df.to_dict(orient="records")
+    # for idx, game in enumerate(games, 1):
+    #     print(idx)
+    #     print(game)
+    #
+    # cols = "AppID,Name,Release date,Estimated owners,Peak CCU,Required age,Price,DiscountDLC count,About the game,Supported languages,Full audio languages,Reviews,Header image,Website,Support url,Support email,Windows,Mac,Linux,Metacritic score,Metacritic url,User score,Positive,Negative,Score rank,Achievements,Recommendations,Notes,Average playtime forever,Average playtime two weeks,Median playtime forever,Median playtime two weeks,Developers,Publishers,Categories,Genres,Tags,Screenshots,Movies".split(",")
+    # print(cols)
