@@ -311,10 +311,10 @@ class SteamGamesDB:
         actual_publishers = row.get(
             "Categories", ""
         )  # Categories column contains publishers
-        actual_categories = row.get("Genres", "")  # Genres column contains categories
-        actual_genres = row.get("Tags", "")  # Tags column contains genres
-        actual_tags = row.get("Screenshots", "")  # Screenshots column contains tags
-        actual_screenshots = row.get("Movies", "")  # Movies column contains screenshots
+        actual_categories = row.get("Genres", "")
+        actual_genres = row.get("Tags", "")
+        actual_tags = row.get("Screenshots", "")
+        actual_screenshots = row.get("Movies", "")
 
         # Insert main game record
         cursor.execute(
@@ -437,93 +437,44 @@ class SteamGamesDB:
 
         # Note: No movies in this CSV due to column shift
 
-    def ingest_csv(self, csv_path: str):
-        """Read CSV and ingest all games into database."""
-        print(f"Reading CSV from: {csv_path}")
-
-        # Read CSV with pandas (better handling of complex CSVs)
-        # TODO: Could potentially do this via reading as bytes and ingesting in chunks
-        df = pd.read_csv(csv_path, low_memory=False, encoding="utf-8",encoding_errors="replace")
-        df = df[:20]
-
-        print(f"Found {len(df)} games to ingest")
-
-        # Convert to list of dicts for easier processing
-        games = df.to_dict("records")
-
-        pprint(games)
-
-        # Ingest each game with transaction for better performance
-        for idx, game in enumerate(games, 1):
-            try:
-                self.ingest_game(game)
-                if idx % 100 == 0:
-                    self.conn.commit()
-                    print(f"Progress: {idx}/{len(games)} games ingested")
-            except Exception as e:
-                self.ingest_error += 1
-                print(f"Error ingesting game {game.get('AppID', 'unknown')}: {e}")
-                continue
-
-        self.conn.commit()
-        print(f"✓ Successfully ingested {len(games)} games")
-
-    def ingest_csv_stream_old(self, csv_path: str):
-        cols = ['AppID', 'Name', 'Release date', 'Estimated owners', 'Peak CCU', 'Required age', 'Price', 'DiscountDLC count', 'About the game', 'Supported languages', 'Full audio languages', 'Reviews', 'Header image', 'Website', 'Support url', 'Support email', 'Windows', 'Mac', 'Linux', 'Metacritic score', 'Metacritic url', 'User score', 'Positive', 'Negative', 'Score rank', 'Achievements', 'Recommendations', 'Notes', 'Average playtime forever', 'Average playtime two weeks', 'Median playtime forever', 'Median playtime two weeks', 'Developers', 'Publishers', 'Categories', 'Genres', 'Tags', 'Screenshots', 'Movies']
-
-        with open(csv_path, "rb") as csv_file_bytes:
-            count = 0
-            for line_bytes in csv_file_bytes:
-                count += 1
-                if count == 1:
-                    continue # skipping name cols
-                try:
-                    line_str = line_bytes.decode("utf-8")
-                    parser = csv.reader([line_str])
-                    row_values = next(parser)
-                    record = dict(zip(cols, row_values))
-                    self.ingest_game(record)
-                    if count % 2500 == 0:
-                        self.conn.commit()
-                        print(f"Progress: {count} games ingested")
-                except UnicodeDecodeError as e:
-                    print(f"UnicodeDecodeError at record {count}. Skipping.: {e}")
-                    self.ingest_error += 1
-                    continue
-                except Exception as e:
-                    print(f"Error ingesting game {record}: {e}")
-                    continue
-
-    def ingest_csv_stream(self, csv_path: str, chunk_size: int = 2500):
-        """Properly stream CSV with pandas chunking."""
+    def ingest_csv_stream(self, csv_path: str, chunk_size: int = 50000):
+        """Ingest steam review data into SQLite"""
         chunks = pd.read_csv(
             csv_path,
             chunksize=chunk_size,
             on_bad_lines='skip',
             encoding='utf-8',
-            encoding_errors='replace'
+            encoding_errors='replace',
+            engine='python',
+            index_col=False
         )
 
-        total = 0
+        total_attempted = 0
+        total_success = 0
         errors = []
 
         for chunk_num, chunk_df in enumerate(chunks, 1):
-            # if chunk_num >= 5:
-            #     break
+            # Fill NaNs with empty strings to prevent parsing errors in _get_or_create_entity
+            chunk_df = chunk_df.fillna("")
+
             for _, row in chunk_df.iterrows():
-                # pprint(row.to_dict())
-                # print("===========")
+
+                total_attempted += 1
+                row_dict = row.to_dict()
+
                 try:
-                    self.ingest_game(row.to_dict())
-                    total += 1
+                    if not row_dict.get("AppID"):
+                        continue
+                    self.ingest_game(row_dict)
+                    total_success += 1
                 except Exception as e:
-                    errors.append({"app_id": row.get("AppID"), "error": str(e)})
-            # print(total)
+                    print(f"Error at AppID {row_dict.get('AppID')}: {e}")
+                    errors.append({"app_id": row_dict.get("AppID"), "error": str(e)})
 
-            self.conn.commit()  # Commit per chunk
-            print(f"Chunk {chunk_num}: {total:,} games ingested")
+            self.conn.commit()
+            print(f"Chunk {chunk_num} Complete: {total_success:,} successfully ingested ({len(errors)} errors)")
 
-        return {"processed": total, "errors": len(errors)}
+        return {"processed": total_success, "attempted": total_attempted, "errors": len(errors)}
 
     def get_stats(self) -> Dict[str, int]:
         """Get database statistics."""
@@ -574,7 +525,6 @@ def main():
     # Ingest data
     csv_path = os.path.join(path, "games.csv")
     db.ingest_csv_stream(csv_path)
-
     # Print statistics
     print("\n" + "=" * 50)
     print("DATABASE STATISTICS")
