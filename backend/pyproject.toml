@@ -1,4 +1,4 @@
-# uv add --package  backend
+# uv add --package backend
 
 [project]
 name = "backend"
